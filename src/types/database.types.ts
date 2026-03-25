@@ -6,18 +6,21 @@ export interface Database {
           id: string;
           name: string;
           email: string;
+          cpf: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           name: string;
           email: string;
+          cpf?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           name?: string;
           email?: string;
+          cpf?: string | null;
           created_at?: string;
         };
         Relationships: [];
@@ -101,6 +104,7 @@ export interface Database {
         Row: {
           id: string;
           document_id: string;
+          client_id: string | null;
           asset_name: string;
           institution: string;
           amount: number;
@@ -112,6 +116,7 @@ export interface Database {
         Insert: {
           id?: string;
           document_id: string;
+          client_id?: string | null;
           asset_name: string;
           institution: string;
           amount?: number;
@@ -123,12 +128,55 @@ export interface Database {
         Update: {
           id?: string;
           document_id?: string;
+          client_id?: string | null;
           asset_name?: string;
           institution?: string;
           amount?: number;
           quantity?: number;
           asset_type?: string;
           confirmed?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      goals: {
+        Row: {
+          id: string;
+          client_id: string;
+          title: string;
+          description: string | null;
+          target_amount: number;
+          current_amount: number;
+          monthly_contribution: number;
+          expected_annual_return: number;
+          deadline: string | null;
+          category: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          client_id: string;
+          title: string;
+          description?: string | null;
+          target_amount: number;
+          current_amount?: number;
+          monthly_contribution?: number;
+          expected_annual_return?: number;
+          deadline?: string | null;
+          category?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          client_id?: string;
+          title?: string;
+          description?: string | null;
+          target_amount?: number;
+          current_amount?: number;
+          monthly_contribution?: number;
+          expected_annual_return?: number;
+          deadline?: string | null;
+          category?: string;
           created_at?: string;
         };
         Relationships: [];

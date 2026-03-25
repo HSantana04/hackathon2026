@@ -6,16 +6,18 @@ import type { Database } from '../types/database.types';
 
 type ClientRow = Database['public']['Tables']['clients']['Row'];
 type PositionRow = Database['public']['Tables']['positions']['Row'];
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { formatCurrency } from '../utils/formatCurrency';
+import { AddClientModal } from '../components/AddClientModal';
 
 interface Client {
   id: string;
   name: string;
   email: string;
+  cpf: string | null;
   created_at: string;
   totalValue?: number;
 }
@@ -26,11 +28,10 @@ export const Clients = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newClient, setNewClient] = useState({ name: '', email: '' });
   const navigate = useNavigate();
 
-  const loadClients = async () => {
-    setLoading(true);
+  const loadClients = async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
     try {
       const { data: clientsData } = await supabase
         .from('clients')
@@ -71,28 +72,11 @@ export const Clients = () => {
     const filtered = clients.filter(
       (client) =>
         client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.email.toLowerCase().includes(searchTerm.toLowerCase())
+        client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (client.cpf && client.cpf.includes(searchTerm.replace(/\D/g, '')))
     );
     setFilteredClients(filtered);
   }, [searchTerm, clients]);
-
-  const handleAddClient = async () => {
-    if (!newClient.name || !newClient.email) return;
-
-    try {
-      const { error } = await supabase
-        .from('clients')
-        .insert([newClient]);
-
-      if (error) throw error;
-
-      setNewClient({ name: '', email: '' });
-      setShowAddModal(false);
-      await loadClients();
-    } catch (error) {
-      console.error('Error adding client:', error);
-    }
-  };
 
   if (loading) {
     return (
@@ -106,12 +90,12 @@ export const Clients = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Clients</h1>
-          <p className="mt-1 text-sm text-gray-600">Manage your client portfolio</p>
+          <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
+          <p className="mt-1 text-sm text-gray-600">Gerencie sua carteira de clientes</p>
         </div>
         <Button onClick={() => setShowAddModal(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Client
+          Adicionar Cliente
         </Button>
       </div>
 
@@ -120,7 +104,7 @@ export const Clients = () => {
           <div className="flex items-center gap-4">
             <Search className="h-5 w-5 text-gray-400" />
             <Input
-              placeholder="Search clients..."
+              placeholder="Buscar clientes..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1"
@@ -131,10 +115,11 @@ export const Clients = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Total Portfolio</TableHead>
-                <TableHead>Created</TableHead>
+                <TableHead>Nome</TableHead>
+                <TableHead>E-mail</TableHead>
+                <TableHead>CPF</TableHead>
+                <TableHead>Patrimônio Total</TableHead>
+                <TableHead>Criado em</TableHead>
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
@@ -143,6 +128,11 @@ export const Clients = () => {
                 <TableRow key={client.id}>
                   <TableCell className="font-medium">{client.name}</TableCell>
                   <TableCell className="text-gray-600">{client.email}</TableCell>
+                  <TableCell className="text-gray-600 font-mono text-sm">
+                    {client.cpf
+                      ? `${client.cpf.slice(0,3)}.${client.cpf.slice(3,6)}.${client.cpf.slice(6,9)}-${client.cpf.slice(9)}`
+                      : '—'}
+                  </TableCell>
                   <TableCell className="font-semibold text-green-600">
                     {formatCurrency(client.totalValue || 0)}
                   </TableCell>
@@ -155,7 +145,7 @@ export const Clients = () => {
                       size="sm"
                       onClick={() => navigate(`/client/${client.id}`)}
                     >
-                      View Details
+                      Ver Detalhes
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -164,44 +154,17 @@ export const Clients = () => {
           </Table>
           {filteredClients.length === 0 && (
             <div className="text-center py-12 text-gray-500">
-              No clients found
+              Nenhum cliente encontrado
             </div>
           )}
         </CardContent>
       </Card>
 
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Add New Client</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Input
-                label="Name"
-                value={newClient.name}
-                onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
-                placeholder="Client name"
-              />
-              <Input
-                label="Email"
-                type="email"
-                value={newClient.email}
-                onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
-                placeholder="client@email.com"
-              />
-              <div className="flex gap-3 pt-4">
-                <Button variant="secondary" onClick={() => setShowAddModal(false)} className="flex-1">
-                  Cancel
-                </Button>
-                <Button onClick={handleAddClient} className="flex-1">
-                  Add Client
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <AddClientModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={() => loadClients(false)}
+      />
     </div>
   );
 };

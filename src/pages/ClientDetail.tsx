@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Calendar } from 'lucide-react';
+import { ArrowLeft, Mail, Calendar, ShieldAlert, Target } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../types/database.types';
@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { formatCurrency } from '../utils/formatCurrency';
+import { FgcAlert } from '../components/FgcAlert';
 
 interface Client {
   id: string;
@@ -37,6 +38,8 @@ export const ClientDetail = () => {
   const [client, setClient] = useState<Client | null>(null);
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showFgcAlert, setShowFgcAlert] = useState(false);
+  const [institutionExposures, setInstitutionExposures] = useState<{ institution: string; total: number }[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -59,6 +62,25 @@ export const ClientDetail = () => {
 
         setClient(clientData);
         setPositions(positionsData || []);
+
+        // Check FGC exposure
+        if (positionsData && positionsData.length > 0) {
+          const grouped = positionsData.reduce((acc, p) => {
+            acc[p.institution] = (acc[p.institution] || 0) + Number(p.amount);
+            return acc;
+          }, {} as Record<string, number>);
+
+          const exposures = Object.entries(grouped).map(([institution, total]) => ({
+            institution,
+            total,
+          }));
+          setInstitutionExposures(exposures);
+
+          const hasUncovered = exposures.some((e) => e.total > 250_000);
+          if (hasUncovered) {
+            setShowFgcAlert(true);
+          }
+        }
       } catch (error) {
         console.error('Error loading client data:', error);
       } finally {
@@ -111,7 +133,7 @@ export const ClientDetail = () => {
     <div className="space-y-6">
       <Button variant="ghost" onClick={() => navigate('/clients')}>
         <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Clients
+        Voltar para Clientes
       </Button>
 
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg p-8 text-white">
@@ -123,12 +145,34 @@ export const ClientDetail = () => {
           </div>
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            <span>Client since {new Date(client.created_at).toLocaleDateString()}</span>
+            <span>Cliente desde {new Date(client.created_at).toLocaleDateString('pt-BR')}</span>
           </div>
         </div>
-        <div className="mt-6">
-          <p className="text-sm text-blue-100">Total Portfolio Value</p>
-          <p className="text-4xl font-bold mt-1">{formatCurrency(totalValue)}</p>
+        <div className="mt-6 flex items-end justify-between">
+          <div>
+            <p className="text-sm text-blue-100">Patrimônio Total</p>
+            <p className="text-4xl font-bold mt-1">{formatCurrency(totalValue)}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate(`/client/${id}/fgc`)}
+              className="bg-white/10 hover:bg-white/20 text-white border-0"
+            >
+              <ShieldAlert className="h-4 w-4 mr-1" />
+              Cobertura FGC
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate(`/client/${id}/goals`)}
+              className="bg-white/10 hover:bg-white/20 text-white border-0"
+            >
+              <Target className="h-4 w-4 mr-1" />
+              Metas
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -239,11 +283,21 @@ export const ClientDetail = () => {
           </Table>
           {positions.length === 0 && (
             <div className="text-center py-12 text-gray-500">
-              No positions found for this client
+              Nenhuma posição encontrada para este cliente
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* FGC Alert */}
+      {showFgcAlert && client && (
+        <FgcAlert
+          clientId={client.id}
+          clientName={client.name}
+          exposures={institutionExposures}
+          onClose={() => setShowFgcAlert(false)}
+        />
+      )}
     </div>
   );
 };

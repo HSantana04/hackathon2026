@@ -194,7 +194,7 @@ export const ConsultantDashboard = () => {
       </div>
       
       {/* Modals */}
-      <AddClientModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
+      <AddClientModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSuccess={() => {}} />
     </div>
   );
 };

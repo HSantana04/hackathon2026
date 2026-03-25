@@ -11,11 +11,17 @@ Plataforma web para consultores de investimentos consolidarem e gerenciarem port
 | **Landing Page** | Página institucional com apresentação da plataforma |
 | **Login** | Tela de autenticação (preparada para Supabase Auth) |
 | **Dashboard do Consultor** | Painel consolidado com métricas, gráficos e visão geral dos portfólios |
-| **Gestão de Clientes** | Listagem, cadastro e detalhamento de clientes |
+| **Gestão de Clientes** | Listagem, cadastro (com CPF) e detalhamento de clientes |
+| **Importação CSV** | Importação em massa de clientes via arquivo CSV (nome, email, CPF) com preview antes de salvar |
 | **Detalhe do Cliente** | Visualização das posições, histórico e documentos de cada cliente |
 | **Upload de Extrato (PDF)** | Upload de PDF + extração automática com IA (OpenAI GPT-4o-mini) |
 | **Preview de Extração** | Tabela editável com as posições extraídas pela IA antes de salvar |
 | **Revisão de Extrações** | Tela para revisar, editar e confirmar posições pendentes |
+| **Ativos B3** | Tabela de referência com ativos da B3 em tempo real (ações, FIIs, BDRs) via API brapi.dev, com busca, filtro por tipo e paginação |
+| **Alerta FGC** | Popup automático ao acessar o detalhe de um cliente que possua mais de R$ 250.000 em uma única instituição financeira |
+| **Cobertura FGC** | Página detalhada com a exposição por instituição, valores cobertos e descobertos pelo Fundo Garantidor de Créditos |
+| **Metas Financeiras** | Criação e acompanhamento de metas por cliente, com gráfico donut de progresso, projeção por juros compostos e estimativa de data de conclusão |
+| **Central de Notificações** | Dropdown de notificações no header com alertas de FGC, extrações pendentes e metas atingidas |
 
 ---
 
@@ -34,6 +40,7 @@ Plataforma web para consultores de investimentos consolidarem e gerenciarem port
 - **Supabase** — banco de dados PostgreSQL, API REST automática e Edge Functions
 - **Supabase Edge Functions** (Deno) — serverless para integração com IA
 - **OpenAI API** (GPT-4o-mini) — extração inteligente de posições de investimento
+- **brapi.dev API** — dados de ativos da B3 em tempo real (cotações, variação, volume)
 - **Row Level Security (RLS)** — políticas de segurança no banco
 
 ### Ferramentas de Desenvolvimento
@@ -69,11 +76,12 @@ Plataforma web para consultores de investimentos consolidarem e gerenciarem port
 
 | Tabela | Descrição |
 |---|---|
-| `clients` | Clientes cadastrados (nome, email) |
+| `clients` | Clientes cadastrados (nome, email, CPF) |
 | `institutions` | Instituições financeiras |
 | `positions` | Posições confirmadas de investimento por cliente |
 | `documents` | Documentos PDF enviados (referência ao arquivo) |
-| `extracted_positions` | Posições extraídas pela IA, pendentes de confirmação |
+| `extracted_positions` | Posições extraídas pela IA, pendentes de confirmação (FK para `clients`) |
+| `goals` | Metas financeiras por cliente (valor alvo, contribuição mensal, retorno esperado, categoria) |
 
 ---
 
@@ -84,21 +92,26 @@ Plataforma web para consultores de investimentos consolidarem e gerenciarem port
 │   ├── assets/                  # Imagens e logo
 │   ├── components/
 │   │   ├── ui/                  # Componentes reutilizáveis (Button, Card, Input, Select, Table, StatCard)
-│   │   ├── layouts/Layout.tsx   # Layout com sidebar e navegação
-│   │   └── AddClientModal.tsx   # Modal de cadastro de cliente
+│   │   ├── layouts/Layout.tsx   # Layout com sidebar, navegação e central de notificações
+│   │   ├── AddClientModal.tsx   # Modal de cadastro de cliente (manual + importação CSV)
+│   │   └── FgcAlert.tsx         # Popup de alerta FGC (>R$250k por instituição)
 │   ├── lib/supabase.ts          # Client Supabase configurado
 │   ├── pages/
 │   │   ├── LandingPage.tsx      # Página institucional
 │   │   ├── LoginPage.tsx        # Tela de login
 │   │   ├── ConsultantDashboard.tsx  # Dashboard principal
-│   │   ├── Clients.tsx          # Lista de clientes
-│   │   ├── ClientDetail.tsx     # Detalhe do cliente
+│   │   ├── Clients.tsx          # Lista de clientes (com CPF)
+│   │   ├── ClientDetail.tsx     # Detalhe do cliente + alerta FGC
 │   │   ├── UploadStatement.tsx  # Upload PDF + extração IA + preview
 │   │   ├── ReviewExtraction.tsx # Revisão de posições extraídas
+│   │   ├── B3Assets.tsx         # Tabela de ativos da B3 (tempo real)
+│   │   ├── FgcCoverage.tsx      # Cobertura FGC por instituição
+│   │   ├── Goals.tsx            # Metas financeiras do cliente
 │   │   └── Dashboard.tsx        # Dashboard alternativo
 │   ├── services/
 │   │   ├── pdfExtractor.ts      # Extração de texto do PDF (pdfjs-dist)
 │   │   ├── aiExtractor.ts       # Chamada à Edge Function de IA
+│   │   ├── b3Assets.ts          # Serviço de busca de ativos B3 (brapi.dev API)
 │   │   └── sampleData.ts        # Dados de exemplo
 │   ├── types/database.types.ts  # Tipos TypeScript do schema Supabase
 │   ├── utils/formatCurrency.ts  # Formatação de moeda
@@ -107,7 +120,9 @@ Plataforma web para consultores de investimentos consolidarem e gerenciarem port
 ├── supabase/
 │   ├── migrations/              # Migrations SQL do banco
 │   │   ├── ..._create_financial_portfolio_tables.sql
-│   │   └── ..._fix_rls_policies_allow_anon.sql
+│   │   ├── ..._fix_rls_policies_allow_anon.sql
+│   │   ├── ..._add_cpf_and_extracted_positions_client_fk.sql
+│   │   └── ..._create_goals_table.sql
 │   └── functions/
 │       └── extract-positions/index.ts  # Edge Function (Deno) — IA
 ├── vite.config.ts
@@ -190,8 +205,46 @@ npm run preview
 | `/dashboard` | Dashboard do Consultor | Com sidebar |
 | `/clients` | Lista de Clientes | Com sidebar |
 | `/client/:id` | Detalhe do Cliente | Com sidebar |
+| `/client/:id/fgc` | Cobertura FGC | Com sidebar |
+| `/client/:id/goals` | Metas Financeiras | Com sidebar |
 | `/upload` | Upload de Extrato | Com sidebar |
 | `/review` | Revisão de Extrações | Com sidebar |
+| `/b3-assets` | Ativos da B3 | Com sidebar |
+
+---
+
+## Novas Funcionalidades
+
+### Ativos B3 (Tempo Real)
+Tabela de referência com ativos listados na B3, consumindo a API pública **brapi.dev**. Inclui:
+- Busca por ticker, nome ou setor
+- Filtro por tipo: Ação, Fundo Imobiliário, BDR
+- Paginação (25 itens por página)
+- Exibição de preço, variação (%), volume e market cap
+- Logo de cada ativo
+
+### Importação de Clientes via CSV
+O modal de cadastro agora suporta:
+- Cadastro manual com campo **CPF** (máscara `000.000.000-00`)
+- Importação em massa via arquivo CSV (separadores `;` ou `,`)
+- Preview dos dados antes de confirmar a importação
+
+### Alerta e Cobertura FGC
+- **Popup automático** ao acessar o detalhe de um cliente com mais de **R$ 250.000** em uma única instituição
+- **Página de cobertura FGC** com tabela detalhada por instituição: valor total, valor coberto (até R$ 250k), valor descoberto e indicador visual
+
+### Metas Financeiras
+Página de metas por cliente com:
+- Criação de metas com título, descrição, categoria, valor alvo, valor atual, contribuição mensal e retorno anual esperado
+- **Gráfico donut** mostrando percentual de progresso
+- **Projeção por juros compostos**: cálculo automático de quantos meses faltam e data estimada para atingir a meta
+- Categorias: Carro, Casa, Educação, Viagem, Negócios, Patrimônio, Outros
+
+### Central de Notificações
+Dropdown no header com notificações sobre:
+- Alertas de exposição FGC
+- Extrações pendentes de revisão
+- Metas atingidas
 
 ---
 
