@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck, ShieldX, ShieldAlert } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../types/database.types';
+import { useAuthRole } from '../hooks/useAuthRole';
+import { useClientAccess } from '../hooks/useClientAccess';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
@@ -24,12 +26,14 @@ interface InstitutionRow {
 export const FgcCoverage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { role } = useAuthRole();
+  const { allowed, checking: accessChecking } = useClientAccess(id);
   const [clientName, setClientName] = useState('');
   const [rows, setRows] = useState<InstitutionRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || accessChecking || !allowed) return;
 
     const load = async () => {
       setLoading(true);
@@ -75,16 +79,27 @@ export const FgcCoverage = () => {
     };
 
     load();
-  }, [id]);
+  }, [id, accessChecking, allowed]);
 
   const totalInvested = rows.reduce((s, r) => s + r.total, 0);
   const totalCovered = rows.reduce((s, r) => s + r.coveredAmount, 0);
   const totalUncovered = rows.reduce((s, r) => s + r.uncoveredAmount, 0);
 
-  if (loading) {
+  if (accessChecking || loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  if (!allowed) {
+    return (
+      <div className="text-center py-12 space-y-4">
+        <p className="text-slate-600">Você não tem permissão para ver esta página.</p>
+        <Button onClick={() => navigate(role === 'cliente' ? '/client-dashboard' : '/clients')}>
+          Voltar
+        </Button>
       </div>
     );
   }

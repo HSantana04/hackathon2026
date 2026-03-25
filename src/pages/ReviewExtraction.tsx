@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, CreditCard as Edit2, Save } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../types/database.types';
+import { useAuthRole } from '../hooks/useAuthRole';
 
 type ExtractedPositionRow = Database['public']['Tables']['extracted_positions']['Row'];
 type DocumentRow = Database['public']['Tables']['documents']['Row'];
@@ -24,6 +25,7 @@ interface ExtractedPosition {
 }
 
 export const ReviewExtraction = () => {
+  const { user, loading: authLoading, role, allowedClientIds } = useAuthRole();
   const [positions, setPositions] = useState<ExtractedPosition[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<ExtractedPosition>>({});
@@ -32,22 +34,39 @@ export const ReviewExtraction = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadExtractedPositions();
-  }, []);
+    if (authLoading || !user) return;
+    void loadExtractedPositions();
+  }, [authLoading, user, role, allowedClientIds.join(',')]);
 
   const loadExtractedPositions = async () => {
     setLoading(true);
     try {
+      if (!allowedClientIds.length) {
+        setPositions([]);
+        return;
+      }
+
+      const { data: docs } = await supabase
+        .from('documents')
+        .select('id')
+        .in('client_id', allowedClientIds)
+        .returns<{ id: string }[]>();
+
+      const docIds = docs?.map((d) => d.id) ?? [];
+      if (!docIds.length) {
+        setPositions([]);
+        return;
+      }
+
       const { data } = await supabase
         .from('extracted_positions')
         .select('*')
+        .in('document_id', docIds)
         .eq('confirmed', false)
         .order('created_at', { ascending: false })
         .returns<ExtractedPositionRow[]>();
 
-      if (data) {
-        setPositions(data);
-      }
+      setPositions(data ?? []);
     } catch (error) {
       console.error('Error loading extracted positions:', error);
     } finally {
@@ -120,7 +139,7 @@ export const ReviewExtraction = () => {
           .eq('id', position.id);
       }
 
-      navigate('/dashboard');
+      navigate(role === 'cliente' ? '/client-dashboard' : '/dashboard');
     } catch (error) {
       console.error('Error confirming positions:', error);
     } finally {
@@ -128,7 +147,7 @@ export const ReviewExtraction = () => {
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -141,10 +160,12 @@ export const ReviewExtraction = () => {
       <div className="max-w-2xl mx-auto">
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-gray-500 mb-4">No extracted positions to review</p>
-            <Button onClick={() => navigate('/upload')}>
-              Upload Statement
-            </Button>
+            <p className="text-gray-500 mb-4">
+              {allowedClientIds.length === 0
+                ? 'Nenhum cliente vinculado para revisar extratos.'
+                : 'Não há posições extraídas pendentes de revisão.'}
+            </p>
+            <Button onClick={() => navigate('/upload')}>Ir para inserir dados</Button>
           </CardContent>
         </Card>
       </div>
@@ -155,9 +176,11 @@ export const ReviewExtraction = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Review Extracted Positions</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Revisão de extratos</h1>
           <p className="mt-1 text-sm text-gray-600">
-            Verify and confirm the extracted investment positions
+            {role === 'cliente'
+              ? 'Confirme as posições extraídas dos seus extratos antes de lançar na carteira.'
+              : 'Confirme as posições extraídas dos extratos dos seus clientes.'}
           </p>
         </div>
         <Button onClick={handleConfirmAll} disabled={confirming}>
@@ -168,7 +191,7 @@ export const ReviewExtraction = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Extracted Positions</CardTitle>
+          <CardTitle>Posições pendentes</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -280,8 +303,8 @@ export const ReviewExtraction = () => {
       <Card className="bg-blue-50 border-blue-200">
         <CardContent>
           <p className="text-sm text-blue-900">
-            <strong>Review carefully:</strong> Once confirmed, these positions will be added to the client's portfolio.
-            You can edit any field by clicking the edit icon, or discard incorrect entries.
+            <strong>Atenção:</strong> ao confirmar, as posições serão lançadas na carteira do cliente. Você pode editar
+            os campos ou descartar linhas incorretas antes de confirmar.
           </p>
         </CardContent>
       </Card>

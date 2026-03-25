@@ -4,6 +4,8 @@ import { ArrowLeft, Mail, Calendar, ShieldAlert, Target } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../types/database.types';
+import { useAuthRole } from '../hooks/useAuthRole';
+import { useClientAccess } from '../hooks/useClientAccess';
 
 type ClientRow = Database['public']['Tables']['clients']['Row'];
 type PositionRow = Database['public']['Tables']['positions']['Row'];
@@ -35,6 +37,8 @@ const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'
 export const ClientDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { role } = useAuthRole();
+  const { allowed, checking: accessChecking } = useClientAccess(id);
   const [client, setClient] = useState<Client | null>(null);
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +46,7 @@ export const ClientDetail = () => {
   const [institutionExposures, setInstitutionExposures] = useState<{ institution: string; total: number }[]>([]);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || accessChecking || !allowed) return;
 
     const loadClientData = async () => {
       setLoading(true);
@@ -89,12 +93,23 @@ export const ClientDetail = () => {
     };
 
     loadClientData();
-  }, [id]);
+  }, [id, accessChecking, allowed]);
 
-  if (loading) {
+  if (accessChecking || loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!allowed) {
+    return (
+      <div className="text-center py-12 space-y-4">
+        <p className="text-slate-600">Você não tem permissão para ver este cliente.</p>
+        <Button onClick={() => navigate(role === 'cliente' ? '/client-dashboard' : '/clients')}>
+          Voltar
+        </Button>
       </div>
     );
   }
@@ -131,9 +146,12 @@ export const ClientDetail = () => {
 
   return (
     <div className="space-y-6">
-      <Button variant="ghost" onClick={() => navigate('/clients')}>
+      <Button
+        variant="ghost"
+        onClick={() => navigate(role === 'cliente' ? '/client-dashboard' : '/clients')}
+      >
         <ArrowLeft className="h-4 w-4 mr-2" />
-        Voltar para Clientes
+        {role === 'cliente' ? 'Voltar ao meu painel' : 'Voltar para clientes'}
       </Button>
 
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg p-8 text-white">

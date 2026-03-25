@@ -10,6 +10,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import { extractTextFromPdf } from '../services/pdfExtractor';
 import { extractPositionsWithAI, type ExtractedPosition } from '../services/aiExtractor';
 import { formatCurrency } from '../utils/formatCurrency';
+import { useAuthRole } from '../hooks/useAuthRole';
 
 interface Client {
   id: string;
@@ -19,6 +20,7 @@ interface Client {
 type FlowStep = 'upload' | 'extracting' | 'preview' | 'saving' | 'success';
 
 export const UploadStatement = () => {
+  const { user, loading: authLoading, role, consultantCpf } = useAuthRole();
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClient, setSelectedClient] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -30,14 +32,29 @@ export const UploadStatement = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadClients();
-  }, []);
+    if (authLoading || !user) return;
+    void loadClients();
+  }, [authLoading, user, role, consultantCpf]);
+
+  useEffect(() => {
+    if (role === 'cliente' && user?.id) {
+      setSelectedClient(user.id);
+    }
+  }, [role, user]);
 
   const loadClients = async () => {
-    const { data } = await supabase
-      .from('clients')
-      .select('id, name')
-      .order('name');
+    if (!user) return;
+    if (role === 'consultor' && !consultantCpf) return;
+
+    let query = supabase.from('clients').select('id, name');
+
+    if (role === 'consultor' && consultantCpf) {
+      query = query.eq('cpf_consultor', consultantCpf);
+    } else if (role === 'cliente') {
+      query = query.eq('id', user.id);
+    }
+
+    const { data } = await query.order('name');
 
     if (data) {
       setClients(data);
@@ -154,12 +171,22 @@ export const UploadStatement = () => {
     ...clients.map(c => ({ value: c.id, label: c.name })),
   ];
 
+  if (authLoading) {
+    return (
+      <div className="flex justify-center py-24">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Upload de Extrato</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Inserir dados</h1>
         <p className="mt-1 text-sm text-gray-600">
-          Envie extratos em PDF para extrair automaticamente as posições de investimento
+          {role === 'cliente'
+            ? 'Envie seu extrato em PDF para extrair e revisar as posições de investimento.'
+            : 'Envie extratos em PDF dos seus clientes para extrair automaticamente as posições.'}
         </p>
       </div>
 
@@ -170,11 +197,11 @@ export const UploadStatement = () => {
         </CardHeader>
         <CardContent className="space-y-6">
           <Select
-            label="Cliente"
+            label={role === 'cliente' ? 'Sua conta' : 'Cliente'}
             options={clientOptions}
             value={selectedClient}
             onChange={(e) => setSelectedClient(e.target.value)}
-            disabled={step === 'extracting' || step === 'saving'}
+            disabled={step === 'extracting' || step === 'saving' || role === 'cliente'}
           />
 
           <div>

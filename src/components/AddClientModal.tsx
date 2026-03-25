@@ -6,6 +6,8 @@ interface AddClientModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  /** CPF do consultor logado — grava em `clients.cpf_consultor` para vincular o cliente. */
+  consultantCpf?: string | null;
 }
 
 interface CsvRow {
@@ -45,7 +47,7 @@ function parseCsv(text: string): CsvRow[] {
   }).filter((r) => r.name && r.email && r.cpf);
 }
 
-export const AddClientModal = ({ isOpen, onClose, onSuccess }: AddClientModalProps) => {
+export const AddClientModal = ({ isOpen, onClose, onSuccess, consultantCpf }: AddClientModalProps) => {
   const [activeTab, setActiveTab] = useState<'manual' | 'csv'>('manual');
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,11 +86,12 @@ export const AddClientModal = ({ isOpen, onClose, onSuccess }: AddClientModalPro
     }
 
     try {
-      const insertData: { name: string; email: string; cpf?: string } = {
+      const insertData: { name: string; email: string; cpf?: string; cpf_consultor?: string } = {
         name: formData.name,
         email: formData.email,
       };
       if (cpfDigits) insertData.cpf = cpfDigits;
+      if (consultantCpf) insertData.cpf_consultor = consultantCpf;
 
       const { error: insertError } = await supabase.from('clients').insert([insertData]);
 
@@ -148,6 +151,7 @@ export const AddClientModal = ({ isOpen, onClose, onSuccess }: AddClientModalPro
         name: r.name,
         email: r.email,
         cpf: r.cpf.replace(/\D/g, ''),
+        ...(consultantCpf ? { cpf_consultor: consultantCpf } : {}),
       }));
 
       const { error: insertError } = await supabase.from('clients').insert(payload);

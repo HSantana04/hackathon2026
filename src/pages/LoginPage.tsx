@@ -48,7 +48,18 @@ export const LoginPage = () => {
         return;
       }
 
-      navigate('/dashboard');
+      const uid = data.session.user.id;
+      const { data: clientRow } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('id', uid)
+        .maybeSingle();
+
+      if (clientRow) {
+        navigate('/client-dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao entrar. Tente novamente.');
     } finally {

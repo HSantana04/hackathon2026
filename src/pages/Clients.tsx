@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../types/database.types';
+import { useAuthRole } from '../hooks/useAuthRole';
 
 type ClientRow = Database['public']['Tables']['clients']['Row'];
 type PositionRow = Database['public']['Tables']['positions']['Row'];
@@ -23,19 +24,34 @@ interface Client {
 }
 
 export const Clients = () => {
+  const navigate = useNavigate();
+  const { user, loading: authLoading, role, consultantCpf, refresh } = useAuthRole();
+
   const [clients, setClients] = useState<Client[]>([]);
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
-  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      navigate('/login', { replace: true });
+      return;
+    }
+    if (role === 'cliente') {
+      navigate('/client-dashboard', { replace: true });
+    }
+  }, [authLoading, user, role, navigate]);
 
   const loadClients = async (showSpinner = true) => {
+    if (role !== 'consultor' || !consultantCpf) return;
     if (showSpinner) setLoading(true);
     try {
       const { data: clientsData } = await supabase
         .from('clients')
         .select('*')
+        .eq('cpf_consultor', consultantCpf)
         .returns<ClientRow[]>()
         .order('created_at', { ascending: false });
 
@@ -65,8 +81,9 @@ export const Clients = () => {
   };
 
   useEffect(() => {
-    loadClients();
-  }, []);
+    if (authLoading || role !== 'consultor' || !consultantCpf) return;
+    void loadClients();
+  }, [authLoading, role, consultantCpf]);
 
   useEffect(() => {
     const filtered = clients.filter(
@@ -78,7 +95,7 @@ export const Clients = () => {
     setFilteredClients(filtered);
   }, [searchTerm, clients]);
 
-  if (loading) {
+  if (authLoading || loading || role !== 'consultor') {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -91,7 +108,9 @@ export const Clients = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
-          <p className="mt-1 text-sm text-gray-600">Gerencie sua carteira de clientes</p>
+          <p className="mt-1 text-sm text-gray-600">
+            Clientes vinculados ao seu CPF como consultor
+          </p>
         </div>
         <Button onClick={() => setShowAddModal(true)}>
           <Plus className="h-4 w-4 mr-2" />
@@ -163,7 +182,11 @@ export const Clients = () => {
       <AddClientModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        onSuccess={() => loadClients(false)}
+        onSuccess={() => {
+          void refresh();
+          void loadClients(false);
+        }}
+        consultantCpf={consultantCpf}
       />
     </div>
   );

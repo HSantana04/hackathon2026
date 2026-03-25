@@ -11,6 +11,7 @@ import { B3Assets } from './pages/B3Assets';
 import { FgcCoverage } from './pages/FgcCoverage';
 import { Goals } from './pages/Goals';
 import { CreateAccountPage } from './pages/CreateAccountPage';
+import { ClientDashboard } from './pages/ClientDashboard';
 
 export const App = () => {
   return (
@@ -23,6 +24,7 @@ export const App = () => {
 
         {/* Dashboard routes (with Layout) */}
         <Route path="/dashboard" element={<Layout><ConsultantDashboard /></Layout>} />
+        <Route path="/client-dashboard" element={<Layout><ClientDashboard /></Layout>} />
         <Route path="/clients" element={<Layout><Clients /></Layout>} />
         <Route path="/client/:id" element={<Layout><ClientDetail /></Layout>} />
         <Route path="/client/:id/fgc" element={<Layout><FgcCoverage /></Layout>} />

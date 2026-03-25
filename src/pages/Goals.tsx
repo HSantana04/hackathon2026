@@ -4,6 +4,8 @@ import { ArrowLeft, Target, Plus, Trash2, Car, Home, GraduationCap, Plane, Brief
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../types/database.types';
+import { useAuthRole } from '../hooks/useAuthRole';
+import { useClientAccess } from '../hooks/useClientAccess';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { formatCurrency } from '../utils/formatCurrency';
@@ -83,6 +85,8 @@ const emptyForm: GoalFormData = {
 export const Goals = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { role } = useAuthRole();
+  const { allowed, checking: accessChecking } = useClientAccess(id);
   const [clientName, setClientName] = useState('');
   const [goals, setGoals] = useState<GoalRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,7 +96,7 @@ export const Goals = () => {
   const [error, setError] = useState<string | null>(null);
 
   const loadData = async () => {
-    if (!id) return;
+    if (!id || !allowed) return;
     setLoading(true);
     setError(null);
     try {
@@ -130,12 +134,13 @@ export const Goals = () => {
   };
 
   useEffect(() => {
-    loadData();
-  }, [id]);
+    if (!id || accessChecking || !allowed) return;
+    void loadData();
+  }, [id, accessChecking, allowed]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!id) return;
+    if (!id || !allowed) return;
     setSaving(true);
     setError(null);
     try {
@@ -173,10 +178,21 @@ export const Goals = () => {
     }
   };
 
-  if (loading) {
+  if (accessChecking || loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  if (!allowed) {
+    return (
+      <div className="space-y-4 text-center py-12">
+        <p className="text-slate-600">Você não tem permissão para ver as metas deste cliente.</p>
+        <Button onClick={() => navigate(role === 'cliente' ? '/client-dashboard' : '/clients')}>
+          Voltar
+        </Button>
       </div>
     );
   }
@@ -185,7 +201,7 @@ export const Goals = () => {
     <div className="space-y-6">
       <Button variant="ghost" onClick={() => navigate(`/client/${id}`)}>
         <ArrowLeft className="h-4 w-4 mr-2" />
-        Voltar para {clientName}
+        Voltar para {clientName || 'detalhes'}
       </Button>
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -194,7 +210,11 @@ export const Goals = () => {
             <Target className="h-6 w-6 text-indigo-600" />
             Metas — {clientName}
           </h1>
-          <p className="text-slate-500 mt-1">Acompanhe os objetivos financeiros do cliente</p>
+          <p className="text-slate-500 mt-1">
+            {role === 'cliente'
+              ? 'Seus objetivos financeiros'
+              : 'Objetivos financeiros do cliente'}
+          </p>
         </div>
         <Button onClick={() => setShowForm(!showForm)}>
           <Plus className="h-4 w-4 mr-2" />

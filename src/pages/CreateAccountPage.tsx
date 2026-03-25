@@ -120,7 +120,7 @@ export const CreateAccountPage = () => {
         }
       }
 
-      navigate('/dashboard');
+      navigate(accountType === 'cliente' ? '/client-dashboard' : '/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao criar conta.');
     } finally {
