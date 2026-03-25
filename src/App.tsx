@@ -8,6 +8,8 @@ import { ClientDetail } from './pages/ClientDetail';
 import { UploadStatement } from './pages/UploadStatement';
 import { ReviewExtraction } from './pages/ReviewExtraction';
 import { B3Assets } from './pages/B3Assets';
+import { FgcCoverage } from './pages/FgcCoverage';
+import { Goals } from './pages/Goals';
 
 export const App = () => {
   return (
@@ -21,6 +23,8 @@ export const App = () => {
         <Route path="/dashboard" element={<Layout><ConsultantDashboard /></Layout>} />
         <Route path="/clients" element={<Layout><Clients /></Layout>} />
         <Route path="/client/:id" element={<Layout><ClientDetail /></Layout>} />
+        <Route path="/client/:id/fgc" element={<Layout><FgcCoverage /></Layout>} />
+        <Route path="/client/:id/goals" element={<Layout><Goals /></Layout>} />
         <Route path="/upload" element={<Layout><UploadStatement /></Layout>} />
         <Route path="/review" element={<Layout><ReviewExtraction /></Layout>} />
         <Route path="/b3-assets" element={<Layout><B3Assets /></Layout>} />

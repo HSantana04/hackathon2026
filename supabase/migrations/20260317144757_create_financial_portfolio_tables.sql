@@ -6,6 +6,7 @@
       - `id` (uuid, primary key)
       - `name` (text) - Client full name
       - `email` (text) - Client email address
+      - `cpf` (text) - Client CPF number
       - `created_at` (timestamptz) - Record creation timestamp
     
     - `institutions`
@@ -51,6 +52,7 @@ CREATE TABLE IF NOT EXISTS clients (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
   email text NOT NULL,
+  cpf text NOT NULL,
   created_at timestamptz DEFAULT now()
 );
 

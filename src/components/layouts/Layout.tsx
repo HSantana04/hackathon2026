@@ -11,6 +11,7 @@ export const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
 
   // Example Consultant Name
   const consultantName = 'Carlos Silva';
@@ -144,10 +145,71 @@ export const Layout = ({ children }: LayoutProps) => {
            </div>
 
            <div className="flex items-center gap-4">
-             <button className="relative p-2.5 rounded-full glass-card hover:bg-white text-slate-600 transition-colors border border-white">
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-orange-500 border-2 border-white"></span>
-             </button>
+             <div className="relative">
+               <button 
+                 onClick={() => setIsNotifOpen(!isNotifOpen)}
+                 className="relative p-2.5 rounded-full glass-card hover:bg-white text-slate-600 transition-colors border border-white"
+               >
+                  <Bell className="h-5 w-5" />
+                  <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-orange-500 border-2 border-white"></span>
+               </button>
+
+               {/* Notification Dropdown */}
+               {isNotifOpen && (
+                 <>
+                   <div className="fixed inset-0 z-40" onClick={() => setIsNotifOpen(false)} />
+                   <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-lg border border-slate-200 z-50 overflow-hidden">
+                     <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                       <h3 className="font-semibold text-slate-800 text-sm">Notificações</h3>
+                       <span className="text-xs text-blue-600 font-medium">3 novas</span>
+                     </div>
+                     <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
+                       <div className="px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors">
+                         <div className="flex items-start gap-3">
+                           <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
+                             <span className="text-red-600 text-xs font-bold">!</span>
+                           </div>
+                           <div>
+                             <p className="text-sm text-slate-800 font-medium">Alerta FGC</p>
+                             <p className="text-xs text-slate-500 mt-0.5">Clientes com valores acima de R$ 250k em uma instituição</p>
+                             <p className="text-xs text-slate-400 mt-1">Agora</p>
+                           </div>
+                         </div>
+                       </div>
+                       <div className="px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors">
+                         <div className="flex items-start gap-3">
+                           <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+                             <span className="text-blue-600 text-xs font-bold">📄</span>
+                           </div>
+                           <div>
+                             <p className="text-sm text-slate-800 font-medium">Extrato pendente</p>
+                             <p className="text-xs text-slate-500 mt-0.5">Há extratos aguardando revisão</p>
+                             <p className="text-xs text-slate-400 mt-1">Há 2 horas</p>
+                           </div>
+                         </div>
+                       </div>
+                       <div className="px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors">
+                         <div className="flex items-start gap-3">
+                           <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+                             <span className="text-emerald-600 text-xs font-bold">✓</span>
+                           </div>
+                           <div>
+                             <p className="text-sm text-slate-800 font-medium">Meta atingida</p>
+                             <p className="text-xs text-slate-500 mt-0.5">Um cliente atingiu uma meta financeira</p>
+                             <p className="text-xs text-slate-400 mt-1">Há 1 dia</p>
+                           </div>
+                         </div>
+                       </div>
+                     </div>
+                     <div className="px-4 py-3 border-t border-slate-100 text-center">
+                       <button className="text-sm text-blue-600 font-medium hover:text-blue-700 transition-colors">
+                         Ver todas as notificações
+                       </button>
+                     </div>
+                   </div>
+                 </>
+               )}
+             </div>
              <div className="h-8 w-[1px] bg-slate-200 mx-2"></div>
              <div className="flex flex-col items-end mr-2">
                 <span className="text-sm font-semibold text-slate-800">
