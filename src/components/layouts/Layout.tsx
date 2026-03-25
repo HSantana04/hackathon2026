@@ -1,7 +1,7 @@
 import { ReactNode, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, FileCheck, LogOut, Search, Bell, Menu, X } from 'lucide-react';
-import logoUrl from '../../assets/LogoPortfelofc.png';
+import logoUrl from '../../assets/Logoportfelofc.png';
 
 interface LayoutProps {
   children: ReactNode;

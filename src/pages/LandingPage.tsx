@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { BarChart3, Upload, Users, ArrowRight, Shield, Zap, ChevronRight } from 'lucide-react';
-import logoUrl from '../assets/LogoPortfelofc.png';
+import logoUrl from '../assets/Logoportfelofc.png';
 
 const features = [
   {

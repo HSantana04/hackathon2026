@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react';
-import logoUrl from '../assets/LogoPortfelofc.png';
+import logoUrl from '../assets/Logoportfelofc.png';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
