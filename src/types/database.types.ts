@@ -20,6 +20,7 @@ export interface Database {
           email?: string;
           created_at?: string;
         };
+        Relationships: [];
       };
       institutions: {
         Row: {
@@ -37,6 +38,7 @@ export interface Database {
           name?: string;
           created_at?: string;
         };
+        Relationships: [];
       };
       positions: {
         Row: {
@@ -72,6 +74,7 @@ export interface Database {
           date?: string;
           created_at?: string;
         };
+        Relationships: [];
       };
       documents: {
         Row: {
@@ -92,6 +95,7 @@ export interface Database {
           file_url?: string;
           created_at?: string;
         };
+        Relationships: [];
       };
       extracted_positions: {
         Row: {
@@ -127,7 +131,12 @@ export interface Database {
           confirmed?: boolean;
           created_at?: string;
         };
+        Relationships: [];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }

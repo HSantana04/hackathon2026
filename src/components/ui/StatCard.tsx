@@ -11,7 +11,7 @@ interface StatCardProps {
   };
 }
 
-export function StatCard({ title, value, icon, trend }: StatCardProps) {
+export const StatCard = ({ title, value, icon, trend }: StatCardProps) => {
   return (
     <Card>
       <CardContent className="flex items-center justify-between">
@@ -32,4 +32,4 @@ export function StatCard({ title, value, icon, trend }: StatCardProps) {
       </CardContent>
     </Card>
   );
-}
+};

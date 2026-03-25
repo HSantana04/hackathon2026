@@ -6,7 +6,7 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   options: { value: string; label: string }[];
 }
 
-export function Select({ label, error, options, className = '', ...props }: SelectProps) {
+export const Select = ({ label, error, options, className = '', ...props }: SelectProps) => {
   return (
     <div className="w-full">
       {label && (
@@ -31,4 +31,4 @@ export function Select({ label, error, options, className = '', ...props }: Sele
       )}
     </div>
   );
-}
+};

@@ -2,10 +2,15 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import type { Database } from '../types/database.types';
+
+type ClientRow = Database['public']['Tables']['clients']['Row'];
+type PositionRow = Database['public']['Tables']['positions']['Row'];
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
+import { formatCurrency } from '../utils/formatCurrency';
 
 interface Client {
   id: string;
@@ -15,7 +20,7 @@ interface Client {
   totalValue?: number;
 }
 
-export function Clients() {
+export const Clients = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +35,7 @@ export function Clients() {
       const { data: clientsData } = await supabase
         .from('clients')
         .select('*')
+        .returns<ClientRow[]>()
         .order('created_at', { ascending: false });
 
       if (!clientsData) return;
@@ -39,7 +45,8 @@ export function Clients() {
           const { data: positions } = await supabase
             .from('positions')
             .select('amount')
-            .eq('client_id', client.id);
+            .eq('client_id', client.id)
+            .returns<Pick<PositionRow, 'amount'>[]>();
 
           const totalValue = positions?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
 
@@ -85,15 +92,6 @@ export function Clients() {
     } catch (error) {
       console.error('Error adding client:', error);
     }
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
   };
 
   if (loading) {
@@ -206,4 +204,4 @@ export function Clients() {
       )}
     </div>
   );
-}
+};

@@ -19,7 +19,7 @@ const sampleExtractions = [
   { asset_name: 'BOVA11', institution: 'XP Investimentos', amount: 30000, quantity: 300, asset_type: 'ETF' },
 ];
 
-export function UploadStatement() {
+export const UploadStatement = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClient, setSelectedClient] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -210,4 +210,4 @@ export function UploadStatement() {
       </Card>
     </div>
   );
-}
+};

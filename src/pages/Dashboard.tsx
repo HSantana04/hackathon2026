@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Users, Building2, DollarSign, TrendingUp } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { Users, Building2, DollarSign } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import { supabase } from '../lib/supabase';
+import type { Database } from '../types/database.types';
+
+type PositionRow = Database['public']['Tables']['positions']['Row'];
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { StatCard } from '../components/ui/StatCard';
 import { Button } from '../components/ui/Button';
-import { generateSamplePortfolio } from '../lib/sampleData';
+import { generateSamplePortfolio } from '../services/sampleData';
+import { formatCurrency } from '../utils/formatCurrency';
 
 interface DashboardStats {
   totalValue: number;
@@ -17,7 +21,7 @@ interface DashboardStats {
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
 
-export function Dashboard() {
+export const Dashboard = () => {
   const [stats, setStats] = useState<DashboardStats>({
     totalValue: 0,
     clientCount: 0,
@@ -33,7 +37,8 @@ export function Dashboard() {
     try {
       const { data: positions } = await supabase
         .from('positions')
-        .select('*');
+        .select('*')
+        .returns<PositionRow[]>();
 
       const { data: clients } = await supabase
         .from('clients')
@@ -91,15 +96,6 @@ export function Dashboard() {
     setGenerating(false);
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -152,7 +148,7 @@ export function Dashboard() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                     outerRadius={100}
                     fill="#8884d8"
                     dataKey="value"
@@ -196,4 +192,4 @@ export function Dashboard() {
       </div>
     </div>
   );
-}
+};

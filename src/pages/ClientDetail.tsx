@@ -3,9 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Calendar } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { supabase } from '../lib/supabase';
+import type { Database } from '../types/database.types';
+
+type ClientRow = Database['public']['Tables']['clients']['Row'];
+type PositionRow = Database['public']['Tables']['positions']['Row'];
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
+import { formatCurrency } from '../utils/formatCurrency';
 
 interface Client {
   id: string;
@@ -26,7 +31,7 @@ interface Position {
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
 
-export function ClientDetail() {
+export const ClientDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [client, setClient] = useState<Client | null>(null);
@@ -43,13 +48,14 @@ export function ClientDetail() {
           .from('clients')
           .select('*')
           .eq('id', id)
-          .maybeSingle();
+          .maybeSingle() as { data: ClientRow | null };
 
         const { data: positionsData } = await supabase
           .from('positions')
           .select('*')
           .eq('client_id', id)
-          .order('amount', { ascending: false });
+          .order('amount', { ascending: false })
+          .returns<PositionRow[]>();
 
         setClient(clientData);
         setPositions(positionsData || []);
@@ -101,15 +107,6 @@ export function ClientDetail() {
     return acc;
   }, [] as { name: string; value: number }[]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
   return (
     <div className="space-y-6">
       <Button variant="ghost" onClick={() => navigate('/clients')}>
@@ -149,7 +146,7 @@ export function ClientDetail() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                     outerRadius={100}
                     fill="#8884d8"
                     dataKey="value"
@@ -182,7 +179,7 @@ export function ClientDetail() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                     outerRadius={100}
                     fill="#8884d8"
                     dataKey="value"
@@ -249,4 +246,4 @@ export function ClientDetail() {
       </Card>
     </div>
   );
-}
+};

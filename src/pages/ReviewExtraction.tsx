@@ -2,10 +2,15 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, CreditCard as Edit2, Save } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import type { Database } from '../types/database.types';
+
+type ExtractedPositionRow = Database['public']['Tables']['extracted_positions']['Row'];
+type DocumentRow = Database['public']['Tables']['documents']['Row'];
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { Input } from '../components/ui/Input';
+import { formatCurrency } from '../utils/formatCurrency';
 
 interface ExtractedPosition {
   id: string;
@@ -18,7 +23,7 @@ interface ExtractedPosition {
   confirmed: boolean;
 }
 
-export function ReviewExtraction() {
+export const ReviewExtraction = () => {
   const [positions, setPositions] = useState<ExtractedPosition[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<ExtractedPosition>>({});
@@ -37,7 +42,8 @@ export function ReviewExtraction() {
         .from('extracted_positions')
         .select('*')
         .eq('confirmed', false)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .returns<ExtractedPositionRow[]>();
 
       if (data) {
         setPositions(data);
@@ -94,7 +100,7 @@ export function ReviewExtraction() {
           .from('documents')
           .select('client_id')
           .eq('id', position.document_id)
-          .maybeSingle();
+          .maybeSingle() as { data: Pick<DocumentRow, 'client_id'> | null };
 
         if (!document) continue;
 
@@ -120,15 +126,6 @@ export function ReviewExtraction() {
     } finally {
       setConfirming(false);
     }
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
   };
 
   if (loading) {
@@ -290,4 +287,4 @@ export function ReviewExtraction() {
       </Card>
     </div>
   );
-}
+};

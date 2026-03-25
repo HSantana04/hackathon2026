@@ -1,4 +1,7 @@
-import { supabase } from './supabase';
+import { supabase } from '../lib/supabase';
+import type { Database } from '../types/database.types';
+
+type ClientRow = Database['public']['Tables']['clients']['Row'];
 
 const sampleClients = [
   { name: 'John Silva', email: 'john.silva@email.com' },
@@ -20,22 +23,22 @@ const assets = {
   'Real Estate Fund': ['HGLG11', 'KNRI11', 'MXRF11', 'XPML11'],
 };
 
-function randomChoice<T>(arr: T[]): T {
+const randomChoice = <T,>(arr: T[]): T => {
   return arr[Math.floor(Math.random() * arr.length)];
-}
+};
 
-function randomAmount(min: number, max: number): number {
+const randomAmount = (min: number, max: number): number => {
   return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+};
 
-export async function generateSamplePortfolio() {
+export const generateSamplePortfolio = async () => {
   try {
     for (const client of sampleClients) {
       const { data: existingClient } = await supabase
         .from('clients')
         .select('id')
         .eq('email', client.email)
-        .maybeSingle();
+        .maybeSingle() as { data: Pick<ClientRow, 'id'> | null };
 
       let clientId: string;
 
@@ -46,10 +49,10 @@ export async function generateSamplePortfolio() {
           .from('clients')
           .insert([client])
           .select()
-          .single();
+          .single() as { data: ClientRow | null; error: unknown };
 
         if (clientError) throw clientError;
-        clientId = newClient.id;
+        clientId = newClient!.id;
       }
 
       const numPositions = randomAmount(8, 15);
@@ -60,7 +63,7 @@ export async function generateSamplePortfolio() {
         const assetName = randomChoice(assets[assetType as keyof typeof assets]);
         const institution = randomChoice(institutions);
         const amount = randomAmount(5000, 500000);
-        const quantity = randomAmount(1, 1000);
+        const quantity = randomChoice([1, 10, 50, 100, 500, 1000]);
 
         positions.push({
           client_id: clientId,
@@ -85,4 +88,4 @@ export async function generateSamplePortfolio() {
     console.error('Error generating sample portfolio:', error);
     return { success: false, message: 'Failed to generate sample portfolio' };
   }
-}
+};
