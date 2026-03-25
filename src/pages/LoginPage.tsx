@@ -2,24 +2,58 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import logoUrl from '../assets/Logoportfelofc.png';
+import { supabase } from '../lib/supabase';
+
+function mapAuthError(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes('invalid login credentials') || lower.includes('invalid_credentials')) {
+    return 'E-mail ou senha incorretos.';
+  }
+  if (lower.includes('email not confirmed')) {
+    return 'Confirme seu e-mail antes de entrar. Verifique a caixa de entrada.';
+  }
+  if (lower.includes('too many requests')) {
+    return 'Muitas tentativas. Aguarde um momento e tente novamente.';
+  }
+  return message;
+}
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
 
+    setError(null);
     setLoading(true);
-    // TODO: Integrar com Supabase Auth
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (signInError) {
+        setError(mapAuthError(signInError.message));
+        return;
+      }
+
+      if (!data.session) {
+        setError('Não foi possível iniciar a sessão. Verifique se o e-mail foi confirmado.');
+        return;
+      }
+
       navigate('/dashboard');
-    }, 1000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao entrar. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -56,6 +90,12 @@ export const LoginPage = () => {
           {/* Form Card */}
           <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 p-8">
             <form onSubmit={handleLogin} className="space-y-5">
+              {error && (
+                <div className="rounded-xl bg-red-50 border border-red-200 px-3.5 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+
               {/* Email Field */}
               <div>
                 <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-1.5">
