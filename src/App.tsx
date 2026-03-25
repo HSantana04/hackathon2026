@@ -10,6 +10,7 @@ import { ReviewExtraction } from './pages/ReviewExtraction';
 import { B3Assets } from './pages/B3Assets';
 import { FgcCoverage } from './pages/FgcCoverage';
 import { Goals } from './pages/Goals';
+import { CreateAccountPage } from './pages/CreateAccountPage';
 
 export const App = () => {
   return (
@@ -18,6 +19,7 @@ export const App = () => {
         {/* Public routes (no Layout) */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/create-account" element={<CreateAccountPage />} />
 
         {/* Dashboard routes (with Layout) */}
         <Route path="/dashboard" element={<Layout><ConsultantDashboard /></Layout>} />

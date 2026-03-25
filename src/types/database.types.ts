@@ -7,6 +7,7 @@ export interface Database {
           name: string;
           email: string;
           cpf: string | null;
+          cpf_consultor: string | null;
           created_at: string;
         };
         Insert: {
@@ -14,6 +15,7 @@ export interface Database {
           name: string;
           email: string;
           cpf?: string | null;
+          cpf_consultor?: string | null;
           created_at?: string;
         };
         Update: {
@@ -21,6 +23,34 @@ export interface Database {
           name?: string;
           email?: string;
           cpf?: string | null;
+          cpf_consultor?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      consultores: {
+        Row: {
+          id: string;
+          cpf: string;
+          name: string;
+          email: string;
+          auth_user_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          cpf: string;
+          name: string;
+          email: string;
+          auth_user_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          cpf?: string;
+          name?: string;
+          email?: string;
+          auth_user_id?: string | null;
           created_at?: string;
         };
         Relationships: [];

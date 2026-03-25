@@ -133,9 +133,9 @@ export const LoginPage = () => {
             {/* Sign Up Link */}
             <p className="mt-6 text-center text-sm text-gray-500">
               Não tem uma conta?{' '}
-              <button className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+              <Link to="/create-account" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
                 Criar conta
-              </button>
+              </Link>
             </p>
           </div>
 
