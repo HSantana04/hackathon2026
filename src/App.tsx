@@ -7,6 +7,7 @@ import { Clients } from './pages/Clients';
 import { ClientDetail } from './pages/ClientDetail';
 import { UploadStatement } from './pages/UploadStatement';
 import { ReviewExtraction } from './pages/ReviewExtraction';
+import { B3Assets } from './pages/B3Assets';
 
 export const App = () => {
   return (
@@ -22,6 +23,7 @@ export const App = () => {
         <Route path="/client/:id" element={<Layout><ClientDetail /></Layout>} />
         <Route path="/upload" element={<Layout><UploadStatement /></Layout>} />
         <Route path="/review" element={<Layout><ReviewExtraction /></Layout>} />
+        <Route path="/b3-assets" element={<Layout><B3Assets /></Layout>} />
       </Routes>
     </BrowserRouter>
   );

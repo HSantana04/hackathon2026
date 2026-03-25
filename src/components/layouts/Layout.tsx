@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, FileCheck, LogOut, Search, Bell, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, FileCheck, Database, LogOut, Search, Bell, Menu, X } from 'lucide-react';
 import logoUrl from '../../assets/Logoportfelofc.png';
 
 interface LayoutProps {
@@ -19,6 +19,7 @@ export const Layout = ({ children }: LayoutProps) => {
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/clients', label: 'Clientes', icon: Users },
     { path: '/review', label: 'Revisões', icon: FileCheck },
+    { path: '/b3-assets', label: 'Ativos B3', icon: Database },
   ];
 
   const handleLogout = () => {
