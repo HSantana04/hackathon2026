@@ -144,6 +144,18 @@ export const ClientDetail = () => {
     return acc;
   }, [] as { name: string; value: number }[]);
 
+  const positionsByInstitution = positions.reduce((acc, p) => {
+    if (!acc[p.institution]) acc[p.institution] = [];
+    acc[p.institution].push(p);
+    return acc;
+  }, {} as Record<string, Position[]>);
+
+  const institutionGroups = Object.entries(positionsByInstitution).map(([institution, institutionPositions]) => ({
+    institution,
+    positions: institutionPositions,
+    totalAmount: institutionPositions.reduce((sum, pos) => sum + Number(pos.amount), 0),
+  }));
+
   return (
     <div className="space-y-6">
       <Button
@@ -302,6 +314,64 @@ export const ClientDetail = () => {
           {positions.length === 0 && (
             <div className="text-center py-12 text-gray-500">
               Nenhuma posição encontrada para este cliente
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Posições por Instituição Financeira</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {institutionGroups.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              Nenhuma posição para agrupar por instituição
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {institutionGroups.map((group) => (
+                <div key={group.institution} className="border rounded-lg p-4">
+                  <div className="mb-4 flex items-center justify-between bg-slate-50 px-4 py-3 rounded-md">
+                    <h3 className="text-lg font-semibold text-slate-800">{group.institution}</h3>
+                    <div className="text-right">
+                      <p className="text-sm text-slate-600">Total Investido</p>
+                      <p className="text-xl font-bold text-green-600">{formatCurrency(group.totalAmount)}</p>
+                    </div>
+                  </div>
+
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Ativo</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Quantidade</TableHead>
+                        <TableHead>Valor</TableHead>
+                        <TableHead>Data</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {group.positions.map((position) => (
+                        <TableRow key={position.id}>
+                          <TableCell className="font-medium">{position.asset_name}</TableCell>
+                          <TableCell>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {position.asset_type}
+                            </span>
+                          </TableCell>
+                          <TableCell>{position.quantity}</TableCell>
+                          <TableCell className="font-semibold text-green-600">
+                            {formatCurrency(Number(position.amount))}
+                          </TableCell>
+                          <TableCell className="text-gray-600">
+                            {new Date(position.date).toLocaleDateString('pt-BR')}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
