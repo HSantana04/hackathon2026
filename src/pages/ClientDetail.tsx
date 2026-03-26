@@ -14,6 +14,7 @@ import { Button } from '../components/ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { formatCurrency } from '../utils/formatCurrency';
 import { FgcAlert } from '../components/FgcAlert';
+import { FundCarousel } from '../components/FundCarousel';
 
 interface Client {
   id: string;
@@ -166,44 +167,47 @@ export const ClientDetail = () => {
         {role === 'cliente' ? 'Voltar ao meu painel' : 'Voltar para clientes'}
       </Button>
 
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg p-8 text-white">
-        <h1 className="text-3xl font-bold">{client.name}</h1>
-        <div className="mt-4 flex items-center gap-6 text-blue-100">
-          <div className="flex items-center gap-2">
-            <Mail className="h-4 w-4" />
-            <span>{client.email}</span>
+      <div className="flex gap-6 items-stretch">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg p-8 text-white flex-1">
+          <h1 className="text-3xl font-bold">{client.name}</h1>
+          <div className="mt-4 flex items-center gap-6 text-blue-100">
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              <span>{client.email}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span>Cliente desde {new Date(client.created_at).toLocaleDateString('pt-BR')}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            <span>Cliente desde {new Date(client.created_at).toLocaleDateString('pt-BR')}</span>
+          <div className="mt-6 flex items-end justify-between">
+            <div>
+              <p className="text-sm text-blue-100">Patrimônio Total</p>
+              <p className="text-4xl font-bold mt-1">{formatCurrency(totalValue)}</p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate(`/client/${id}/fgc`)}
+                className="bg-white/10 hover:bg-white/20 text-white border-0"
+              >
+                <ShieldAlert className="h-4 w-4 mr-1" />
+                Cobertura FGC
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate(`/client/${id}/goals`)}
+                className="bg-white/10 hover:bg-white/20 text-white border-0"
+              >
+                <Target className="h-4 w-4 mr-1" />
+                Metas
+              </Button>
+            </div>
           </div>
         </div>
-        <div className="mt-6 flex items-end justify-between">
-          <div>
-            <p className="text-sm text-blue-100">Patrimônio Total</p>
-            <p className="text-4xl font-bold mt-1">{formatCurrency(totalValue)}</p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => navigate(`/client/${id}/fgc`)}
-              className="bg-white/10 hover:bg-white/20 text-white border-0"
-            >
-              <ShieldAlert className="h-4 w-4 mr-1" />
-              Cobertura FGC
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => navigate(`/client/${id}/goals`)}
-              className="bg-white/10 hover:bg-white/20 text-white border-0"
-            >
-              <Target className="h-4 w-4 mr-1" />
-              Metas
-            </Button>
-          </div>
-        </div>
+        <FundCarousel positions={positions} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

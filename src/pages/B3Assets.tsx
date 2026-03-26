@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Search, TrendingUp, TrendingDown, Minus, RefreshCw, Database } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Search, TrendingUp, TrendingDown, Minus, RefreshCw, Database, X } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
@@ -15,7 +16,18 @@ const ASSET_TYPE_OPTIONS = [
   { value: 'bdr', label: 'BDRs' },
 ];
 
+interface FundDetailState {
+  asset_name: string;
+  institution: string;
+  asset_type: string;
+  amount: number;
+  quantity: number;
+  date: string;
+}
+
 export const B3Assets = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [assets, setAssets] = useState<B3Asset[]>([]);
   const [filteredAssets, setFilteredAssets] = useState<B3Asset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +36,17 @@ export const B3Assets = () => {
   const [typeFilter, setTypeFilter] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 25;
+
+  const [fundDetail, setFundDetail] = useState<FundDetailState | null>(null);
+
+  useEffect(() => {
+    const state = location.state as { fundDetail?: FundDetailState } | null;
+    if (state?.fundDetail) {
+      setFundDetail(state.fundDetail);
+      // Clear the state so it doesn't persist on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, navigate, location.pathname]);
 
   const loadAssets = useCallback(async () => {
     setLoading(true);
@@ -290,6 +313,72 @@ export const B3Assets = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Fund Detail Popup */}
+      {fundDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-white">Detalhes do Fundo</h2>
+              <button
+                onClick={() => setFundDetail(null)}
+                className="p-1 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="space-y-3">
+                <div className="flex justify-between items-start">
+                  <span className="text-sm text-slate-500">Ativo</span>
+                  <span className="text-sm font-semibold text-slate-900 text-right max-w-[60%]">
+                    {fundDetail.asset_name}
+                  </span>
+                </div>
+                <div className="border-t border-slate-100" />
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-slate-500">Instituição</span>
+                  <span className="text-sm font-medium text-slate-700">{fundDetail.institution}</span>
+                </div>
+                <div className="border-t border-slate-100" />
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-slate-500">Tipo</span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                    {fundDetail.asset_type}
+                  </span>
+                </div>
+                <div className="border-t border-slate-100" />
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-slate-500">Quantidade</span>
+                  <span className="text-sm font-medium text-slate-700">{fundDetail.quantity}</span>
+                </div>
+                <div className="border-t border-slate-100" />
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-slate-500">Valor</span>
+                  <span className="text-lg font-bold text-emerald-600">
+                    {formatCurrency(Number(fundDetail.amount))}
+                  </span>
+                </div>
+                <div className="border-t border-slate-100" />
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-slate-500">Data</span>
+                  <span className="text-sm font-medium text-slate-700">
+                    {new Date(fundDetail.date).toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
+              </div>
+              <div className="pt-2">
+                <Button
+                  onClick={() => setFundDetail(null)}
+                  className="w-full"
+                >
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
